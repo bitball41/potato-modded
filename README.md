@@ -4,9 +4,20 @@ Native character fusion for the existing Godot WebAssembly export, adapted from
 [Flabort's GMO](https://github.com/Flabort/Genetically-Engineered-Overkill).
 Works with the vanilla and active Abyssal Terrors character resources in this build.
 
-Download **[Brotato-GMO.html](Brotato-GMO.html)** and open it in your browser.
+Download **[Brotato-GMO-v4.html](Brotato-GMO-v4.html)** and open it in your browser.
 It is a standalone launcher: the game files load through jsDelivr, so an internet
-connection is required. `Brotato.html` is the same launcher for existing links.
+connection is required. `Brotato-GMO.html` and `Brotato.html` are aliases.
+
+Launcher 4 checks the small `gmo/release.json` pointer for GMO updates, then loads
+the matching immutable patch from jsDelivr. If the update API is unavailable, it
+uses its bundled corrected release. The engine, base assets, and save paths stay
+fixed. Earlier downloaded launchers remain pinned to their embedded old patch;
+repository updates cannot change those files. Replace an older launcher once with
+version 4 to receive later patch fixes.
+
+Script failures now display their error and source location, with **Download log**
+for a local diagnostic report. Nothing is uploaded. The separate asset cache and
+game save databases are retained.
 
 On character selection, enable **GMO**, select a balance preset, then select two
 different unlocked characters. Hovering the second character previews the fusion;
@@ -71,7 +82,8 @@ Commit the source and `GMO.pck`, then pin the launcher to that commit:
 python tools/make_launcher.py --mod-ref COMMIT_CONTAINING_GMO_PCK
 ```
 
-The generator updates both HTML launchers. Commit them after generation.
+The generator updates all three HTML launchers and `gmo/release.json`. Commit
+them together after generation.
 The base assets remain pinned to the pre-mod export; changing the engine or base
 game requires adapting the native scripts and updating the base ref together.
 
@@ -80,3 +92,12 @@ character-grid initialization, Back and fusion cancellation, fusion creation,
 weapon/difficulty navigation, save round-tripping, vanilla selection, and DLC
 character fusion. The same checks pass with a pack assembled by the actual
 launcher merge function. Browser UI testing was not performed.
+
+
+The original release's empty character screen and inert Back button were reproduced
+in the shipped WebAssembly engine: `fusion.gdc` returned `Resource` where its
+signature required `CharacterData`, so its preload prevented the selection script
+from loading. The corrected source patch passes a cold splash/title/selection/Back
+sequence in that same engine in a command-line harness with rendering stubs.
+Launcher update selection, blocked/incompatible update fallbacks, and error
+reporting are also checked without opening a browser.

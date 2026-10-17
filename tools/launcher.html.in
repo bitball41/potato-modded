@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="dark">
+  <meta name="gmo-launcher-version" content="4">
   <title>Brotato · GMO</title>
   <style>
     * { box-sizing: border-box; }
@@ -20,6 +21,11 @@
     progress::-moz-progress-bar { background: #c4e39e; }
     #status { margin: 12px 0 0; color: #d3d7cb; font-size: 13px; font-variant-numeric: tabular-nums; line-height: 1.5; overflow-wrap: anywhere; }
     .tip { margin: 34px 0 0; font-size: 13px; color: #80877b; line-height: 1.6; }
+    #release { color: #80877b; font-size: 12px; }
+    #game-error { position: fixed; z-index: 10; left: 16px; bottom: 16px; width: min(760px, calc(100vw - 32px)); max-height: 45vh; overflow: auto; padding: 16px; background: #171916; border: 1px solid #947c68; border-radius: 8px; box-shadow: 0 8px 30px #0008; }
+    #game-error p { margin: 0 0 10px; line-height: 1.5; }
+    #error-details { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 20vh; overflow: auto; color: #d3d7cb; font-size: 12px; }
+    #game-error button { margin: 4px 8px 0 0; padding: 7px 12px; font-size: 13px; }
     button { margin-top: 20px; border: 1px solid #657450; border-radius: 7px; padding: 10px 18px; background: #1f2819; color: #e9f1de; font: inherit; cursor: pointer; }
     button:focus-visible { outline: 2px solid #c4e39e; outline-offset: 4px; }
     [hidden] { display: none !important; }
@@ -34,16 +40,25 @@
       <p class="subtitle">Two characters. One potato.<br>Vanilla and Abyssal Terrors character fusion.</p>
       <progress id="progress" max="100" value="0" aria-label="Game download progress"></progress>
       <p id="status" role="status" aria-live="polite">Preparing game…</p>
+      <p id="release">Launcher 4</p>
       <button id="retry" type="button" hidden>Retry</button>
       <p class="tip">Enable GMO on the character selection screen, then choose two characters.<br>Game downloads are cached when your browser allows it.</p>
     </main>
   </div>
+  <section id="game-error" role="alert" hidden>
+    <p>A game script failed. Download the log to identify the failure.</p>
+    <pre id="error-details"></pre>
+    <button id="save-log" type="button">Download log</button>
+    <button id="dismiss-error" type="button">Dismiss</button>
+  </section>
   <script>
   "use strict";
-  // Immutable asset refs keep the engine, base pack, and native patch together.
-  const RELEASE = __GMO_RELEASE_CONFIG__;
-  const BASE = `https://cdn.jsdelivr.net/gh/${RELEASE.base_repository}@${RELEASE.base_ref}/`;
-  const MOD = `https://cdn.jsdelivr.net/gh/bitball41/potato-modded@${RELEASE.mod_ref}/`;
+  // Keep a working immutable release for offline/update-service failures. The
+  // small release descriptor lets downloaded launchers receive later GMO fixes.
+  const BUNDLED_RELEASE = __GMO_RELEASE_CONFIG__;
+  let RELEASE = BUNDLED_RELEASE;
+  let BASE;
+  let MOD;
   const originalFetch = window.fetch.bind(window);
   const progress = document.getElementById("progress");
   const status = document.getElementById("status");
@@ -53,6 +68,100 @@
   const mb = value => (value / 1048576).toFixed(1);
   let activeFetchOverride = null;
   let databasePromise = null;
+  const gameLog = [];
+  const scriptErrors = [];
+  let pendingErrorLocation = false;
+  let errorTimer = null;
+  let errorShown = false;
+
+  function rememberLog(message) {
+    gameLog.push(String(message));
+    if (gameLog.length > 250) gameLog.shift();
+  }
+
+  function enginePrint(...args) {
+    console.log(...args);
+    rememberLog(args.join(" "));
+  }
+
+  function engineError(...args) {
+    console.error(...args);
+    const message = args.join(" ");
+    rememberLog(message);
+    // The native logger can report a harmless inability to open its log file.
+    // Compilation and gameplay script failures must reach the user instead of
+    // leaving an unexplained, unresponsive scene on the canvas.
+    const scriptFailure = /Parse Error|Cannot load byte code|Failed loading resource|SCRIPT ERROR/.test(message);
+    const logFileFailure = /Could not open log file|_rotate_log_file|_write_to_log_file/.test(message);
+    if ((scriptFailure && !logFileFailure) || (pendingErrorLocation && /^\s*at:/.test(message))) {
+      scriptErrors.push(message);
+      if (scriptErrors.length > 40) scriptErrors.shift();
+      if (errorShown) document.getElementById("error-details").textContent = scriptErrors.slice(-20).join("\n");
+    }
+    pendingErrorLocation = scriptFailure && !logFileFailure;
+    if (!errorShown && scriptFailure && !logFileFailure) {
+      clearTimeout(errorTimer);
+      errorTimer = setTimeout(() => {
+        errorShown = true;
+        document.getElementById("error-details").textContent = scriptErrors.slice(-20).join("\n");
+        document.getElementById("game-error").hidden = false;
+      }, 150);
+    }
+  }
+
+  document.getElementById("dismiss-error").addEventListener("click", () => {
+    document.getElementById("game-error").hidden = true;
+    document.getElementById("canvas").focus();
+  });
+  document.getElementById("save-log").addEventListener("click", () => {
+    const report = ["Brotato GMO launcher 4", `Release: ${RELEASE.version}`, `Patch: ${RELEASE.mod_ref}`, `Base: ${RELEASE.base_ref}`, "", ...gameLog].join("\n");
+    const url = URL.createObjectURL(new Blob([report], { type: "text/plain;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "Brotato-GMO-log.txt";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
+
+  function compatibleRelease(candidate) {
+    if (!candidate || typeof candidate !== "object") return false;
+    if (candidate.base_repository !== BUNDLED_RELEASE.base_repository || candidate.base_ref !== BUNDLED_RELEASE.base_ref) return false;
+    if (!/^[a-f0-9]{40}$/.test(candidate.mod_ref) || typeof candidate.version !== "string") return false;
+    if (candidate.engine_script_integrity !== BUNDLED_RELEASE.engine_script_integrity) return false;
+    const validFile = (file, name) => file && file.name === name && Number.isSafeInteger(file.size) && file.size > 0 && /^[a-f0-9]{64}$/.test(file.sha256);
+    if (!Array.isArray(candidate.base_files) || candidate.base_files.length !== BUNDLED_RELEASE.base_files.length) return false;
+    if (!candidate.base_files.every((file, index) => validFile(file, BUNDLED_RELEASE.base_files[index].name))) return false;
+    return validFile(candidate.patch, "GMO.pck");
+  }
+
+  async function selectRelease() {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 2500);
+    status.textContent = "Checking for GMO updates…";
+    try {
+      // GitHub supplies only this small pointer. All game assets still come
+      // from immutable jsDelivr URLs; a blocked/rate-limited API is optional.
+      const response = await originalFetch("https://api.github.com/repos/bitball41/potato-modded/contents/gmo/release.json?ref=main", {
+        headers: { Accept: "application/vnd.github.raw+json" }, cache: "no-store", signal: controller.signal
+      });
+      if (!response.ok) throw new Error(`Update check returned HTTP ${response.status}.`);
+      const candidate = await response.json();
+      if (!compatibleRelease(candidate)) throw new Error("Update descriptor is incompatible with this launcher.");
+      RELEASE = candidate;
+      rememberLog(`Selected current GMO release ${RELEASE.version} (${RELEASE.mod_ref}).`);
+    } catch (error) {
+      rememberLog(`Using bundled release ${BUNDLED_RELEASE.mod_ref}: ${error.message}`);
+    } finally {
+      clearTimeout(timer);
+    }
+    BASE = `https://cdn.jsdelivr.net/gh/${RELEASE.base_repository}@${RELEASE.base_ref}/`;
+    MOD = `https://cdn.jsdelivr.net/gh/bitball41/potato-modded@${RELEASE.mod_ref}/`;
+    state.total = RELEASE.base_files.reduce((n, file) => n + file.size, RELEASE.patch.size);
+    document.getElementById("release").textContent = "Launcher 4";
+    rememberLog(`Base ${RELEASE.base_ref}; patch ${RELEASE.mod_ref}.`);
+  }
 
   function showProgress(label = "Downloading game") {
     const percent = Math.min(100, state.loaded / state.total * 100);
@@ -265,6 +374,7 @@
   async function start() {
     try {
       if (typeof WebAssembly !== "object") throw new Error("This browser does not support WebAssembly.");
+      await selectRelease();
       const descriptors = RELEASE.base_files.concat(RELEASE.patch);
       const blobs = new Array(descriptors.length);
       let nextFile = 0;
@@ -316,6 +426,8 @@
         persistentPaths: ["/userfs"],
         focusCanvas: true,
         unloadAfterInit: true,
+        onPrint: enginePrint,
+        onPrintError: engineError,
         gdnativeLibs: []
       });
       await engine.startGame();
