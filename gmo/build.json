@@ -1,6 +1,6 @@
 {
   "format": "godot3-pck-overlay-v1",
-  "version": "gmo-web-2",
+  "version": "gmo-web-3",
   "engine": "3.7.0",
   "base_repository": "bitball41/potato-modded",
   "base_ref": "df84cdf6b5084d91d5693fd5cf0159f62116a224",
@@ -8,8 +8,8 @@
   "upstream_ref": "3c85e5c2ce6f3e3004f8ef082fdb117661b6b9d6",
   "patch": {
     "name": "GMO.pck",
-    "size": 346192,
-    "sha256": "1ff94e652d1f7733f4eb3c45045723b5693501ab8270d9d94aa26ff227b56287"
+    "size": 374880,
+    "sha256": "8f023b03d3b8869c743553428081bf8e71c6e061cb7440eaa8a2563d08929b5e"
   },
   "base_files": [
     {
@@ -76,6 +76,8 @@
   "engine_script_integrity": "sha384-iYXQmBtfCFvzeL4ZwJlDSFtqh8zZMO8xHvr2sF0CwGEl9rlura5AQbzwpAkcxPJI",
   "resources": [
     ".import/GMO_hybrid_reworked.png-8f1c3cae10e72dc5affff309096a8c49.stex",
+    "gmo/assets/GMO_hybrid_reworked.png",
+    "gmo/assets/GMO_hybrid_reworked.png.import",
     "gmo/fusion.gd",
     "gmo/fusion.gd.remap",
     "gmo/selection_controller.gd",
@@ -88,8 +90,6 @@
     "items/characters/character_data.gd.remap",
     "main.gd",
     "main.gd.remap",
-    "mods-unpacked/flabort-GMO/content/characters/GMO_dummy/GMO_hybrid_reworked.png",
-    "mods-unpacked/flabort-GMO/content/characters/GMO_dummy/GMO_hybrid_reworked.png.import",
     "singletons/item_service.gd",
     "singletons/item_service.gd.remap",
     "singletons/player_run_data.gd",
@@ -98,6 +98,10 @@
     "singletons/progress_data.gd.remap",
     "singletons/run_data.gd",
     "singletons/run_data.gd.remap",
+    "ui/menus/run/base_selection.gd",
+    "ui/menus/run/base_selection.gd.remap",
+    "ui/menus/run/character_selection.gd",
+    "ui/menus/run/character_selection.gd.remap",
     "ui/menus/run/character_selection.tscn",
     "ui/menus/shop/shop_item.gd",
     "ui/menus/shop/shop_item.gd.remap",

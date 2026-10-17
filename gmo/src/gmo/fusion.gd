@@ -11,7 +11,7 @@ const PRESETS = {
 	"original": [-25, 40, 50, 10],
 	"easy": [0, 0, 0, 0]
 }
-const ICON = "res://mods-unpacked/flabort-GMO/content/characters/GMO_dummy/GMO_hybrid_reworked.png"
+const ICON = "res://gmo/assets/GMO_hybrid_reworked.png"
 
 
 static func balance_values(preset: String, custom: Array = []) -> Array:
@@ -147,7 +147,10 @@ static func create(first: CharacterData, second: CharacterData, preset: String =
 				if replacements.has(source_effect.key):
 					continue
 				replacements[source_effect.key] = true
-			var effect = source_effect.duplicate(true)
+			# Deep Resource duplication also duplicates exported GDScript resources
+			# in Godot 3, stripping the effect's script and breaking fusion creation.
+			# Use the same script-preserving duplication as native character effects.
+			var effect = source_effect.duplicate()
 			effect._generate_hashes()
 			character.effects.append(effect)
 	for i in BALANCE_KEYS.size():

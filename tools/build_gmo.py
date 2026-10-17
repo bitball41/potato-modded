@@ -11,7 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 BASE_REF = "df84cdf6b5084d91d5693fd5cf0159f62116a224"
 UPSTREAM_REF = "3c85e5c2ce6f3e3004f8ef082fdb117661b6b9d6"
-ICON_DIR = "mods-unpacked/flabort-GMO/content/characters/GMO_dummy/"
+ICON_DIR = "gmo/assets/"
 
 
 def aligned(value, alignment=16):
@@ -68,7 +68,7 @@ def main():
     base_chunks = sorted(ROOT.glob("Brotato.pck.part*")) + sorted(ROOT.glob("Brotato.wasm.part*"))
     manifest = {
         "format": "godot3-pck-overlay-v1",
-        "version": "gmo-web-2",
+        "version": "gmo-web-3",
         "engine": "3.7.0",
         "base_repository": "bitball41/potato-modded",
         "base_ref": BASE_REF,

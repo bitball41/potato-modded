@@ -9,7 +9,7 @@ metadata={
 
 [deps]
 
-source_file="res://mods-unpacked/flabort-GMO/content/characters/GMO_dummy/GMO_hybrid_reworked.png"
+source_file="res://gmo/assets/GMO_hybrid_reworked.png"
 dest_files=[ "res://.import/GMO_hybrid_reworked.png-8f1c3cae10e72dc5affff309096a8c49.stex" ]
 
 [params]

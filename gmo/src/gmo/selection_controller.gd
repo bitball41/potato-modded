@@ -134,6 +134,9 @@ func _on_pressed(element: InventoryElement, inventory_index: int) -> void:
 		_controls.set_hint(reason)
 		return
 	var combined = _preview(player, candidate)
+	if combined == null:
+		_controls.set_hint("This fusion could not be created. Choose another partner or reset fusion.")
+		return
 	_screen._player_characters[player] = combined
 	_screen._get_panels()[player].set_data(combined, player)
 	_screen._set_selected_element(player)
@@ -166,6 +169,8 @@ func _on_focused(element: InventoryElement, inventory_index: int) -> void:
 		_controls.set_hint(reason)
 		return
 	var combined = _preview(player, element.item)
+	if combined == null:
+		return
 	_screen._get_panels()[player].set_data(combined, player)
 	if not RunData.is_coop_run:
 		_screen.update_info_panel(combined)

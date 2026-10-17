@@ -38,9 +38,9 @@ entries; they do not replace either character's individual win records or count 
 extra vanilla characters toward Nightmare unlocks. To retain access to existing
 saves, use the same browser profile and origin; browsers isolate different origins.
 
-The original PCK/WASM chunks and engine files are unchanged. The original character
-selection script also stays intact: a separate child controller attaches GMO after
-the native screen initializes. Hover previews do not apply/remove fusion effects
+The original PCK/WASM chunks and engine files are unchanged. The native selection
+scripts are bundled as source with their original behavior; a separate child
+controller attaches GMO after the native screen initializes. Hover previews do not apply/remove fusion effects
 or replace the grid's character resources. The custom dialog uses Godot 3 APIs.
 
 The launcher merges a small `GMO.pck` resource patch into the pack index before
@@ -75,5 +75,8 @@ The generator updates both HTML launchers. Commit them after generation.
 The base assets remain pinned to the pre-mod export; changing the engine or base
 game requires adapting the native scripts and updating the base ref together.
 
-No automated or manual tests were run for this change, as requested. Packaging
-writes the resource archive without starting the game or opening an editor.
+Headless checks using Godot 3.7.dev1 (`0a9011743`, the Web engine revision) cover
+character-grid initialization, Back and fusion cancellation, fusion creation,
+weapon/difficulty navigation, save round-tripping, vanilla selection, and DLC
+character fusion. The same checks pass with a pack assembled by the actual
+launcher merge function. Browser UI testing was not performed.
