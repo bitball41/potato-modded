@@ -3,7 +3,6 @@ extends HBoxContainer
 signal configured()
 signal reset_requested()
 
-const FUSION = preload("res://gmo/fusion.gd")
 const PRESET_NAMES = ["default", "original", "easy", "custom"]
 const CUSTOM_LABELS = ["XP gain (%)", "Item prices (%)", "Enemy count (%)", "Enemy speed (%)"]
 const CUSTOM_MAX = [500, 1000, 500, 300]
@@ -18,6 +17,7 @@ var _reset_button: Button
 var _hint: Label
 var _dialog: ConfirmationDialog
 var _spins = []
+var _listening_before_dialog = false
 
 
 func _ready() -> void:
@@ -33,7 +33,9 @@ func _ready() -> void:
 	_preset_button = OptionButton.new()
 	for title in ["Default balance", "Original balance", "Easy balance", "Custom balance"]:
 		_preset_button.add_item(title)
-	_preset_button.selected = max(0, PRESET_NAMES.find(preset))
+	if not PRESET_NAMES.has(preset):
+		preset = "default"
+	_preset_button.selected = PRESET_NAMES.find(preset)
 	add_child(_preset_button)
 	_custom_button = Button.new()
 	_custom_button.text = "Customize"
@@ -59,9 +61,14 @@ func _build_dialog() -> void:
 	_dialog.window_title = "Custom GMO balance"
 	_dialog.dialog_hide_on_ok = true
 	add_child(_dialog)
+	# AcceptDialog/ConfirmationDialog has no get_vbox() in Godot 3.x.
+	var content = VBoxContainer.new()
+	content.add_constant_override("separation", 16)
+	_dialog.add_child(content)
+	_dialog.get_label().hide()
 	var explanation = Label.new()
 	explanation.text = "These modifiers apply in addition to both characters' abilities."
-	_dialog.get_vbox().add_child(explanation)
+	content.add_child(explanation)
 	for i in 4:
 		var row = HBoxContainer.new()
 		row.add_constant_override("separation", 30)
@@ -76,21 +83,24 @@ func _build_dialog() -> void:
 		spin.rect_min_size.x = 180
 		row.add_child(spin)
 		_spins.append(spin)
-		_dialog.get_vbox().add_child(row)
+		content.add_child(row)
 	_dialog.connect("confirmed", self, "_on_custom_confirmed")
+	_dialog.connect("popup_hide", self, "_on_custom_closed")
 
 
 func _show_custom() -> void:
 	for i in _spins.size():
 		_spins[i].value = custom_balance[i]
+	_listening_before_dialog = CoopService.listening_for_inputs
+	CoopService.listening_for_inputs = true
 	_dialog.popup_centered(Vector2(850, 390))
+	Utils.call_deferred("focus_player_control", _dialog.get_ok(), 0)
 
 
 func _on_custom_confirmed() -> void:
 	custom_balance = []
 	for spin in _spins:
 		custom_balance.append(int(spin.value))
-	custom_balance = FUSION.balance_values("custom", custom_balance)
 	preset = "custom"
 	_preset_button.selected = 3
 	_publish_configuration()
@@ -120,7 +130,8 @@ func _update_visibility() -> void:
 	_custom_button.visible = mode_enabled and preset == "custom"
 	_reset_button.visible = mode_enabled
 	_hint.visible = mode_enabled
-	var values = FUSION.balance_values(preset, custom_balance)
+	var presets = {"default": [-10, 10, 15, 3], "original": [-25, 40, 50, 10], "easy": [0, 0, 0, 0]}
+	var values = custom_balance if preset == "custom" else presets[preset]
 	_preset_button.hint_tooltip = "XP: %s%%; item prices: %s%%; enemies: %s%%; enemy speed: %s%%" % values
 
 
@@ -131,3 +142,20 @@ func set_hint(message: String) -> void:
 
 func _on_reset() -> void:
 	emit_signal("reset_requested")
+
+
+func get_toggle() -> CheckButton:
+	return _toggle
+
+
+func is_custom_open() -> bool:
+	return _dialog != null and _dialog.visible
+
+
+func close_custom() -> void:
+	_dialog.hide()
+
+
+func _on_custom_closed() -> void:
+	CoopService.listening_for_inputs = _listening_before_dialog
+	Utils.call_deferred("focus_player_control", _custom_button, 0)

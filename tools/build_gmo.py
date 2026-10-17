@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
-"""Compile the GMO scripts and package a Godot 3.7 overlay. Does not run the game."""
+"""Package native GMO source resources for the existing Godot Web engine."""
 
 import argparse
 import base64
 import hashlib
 import json
-import shutil
 import struct
-import subprocess
-import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -50,35 +47,18 @@ def describe(path):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--gdre", required=True, type=Path, help="GDRE Tools v2.7.4 executable")
-    args = parser.parse_args()
-    gdre = args.gdre.resolve()
+    parser.add_argument("--gdre", type=Path, help=argparse.SUPPRESS)
+    parser.parse_args()
     files = {}
-    with tempfile.TemporaryDirectory(prefix="potato-gmo-build-") as temporary:
-        staging = Path(temporary)
-        bytecode = staging / "bytecode"
-        bytecode.mkdir()
-        sources = []
-        for source in sorted((ROOT / "gmo/src").rglob("*.gd")):
-            target = staging / source.relative_to(ROOT / "gmo/src")
-            target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(source, target)
-            sources.append(target)
-        # This emits the same v13 token bytecode used by the existing export.
-        # It compiles resources only; no scene, game, or test process is started.
-        subprocess.run(
-            [str(gdre), "--headless", "--bytecode=a7aad78", "--output=" + str(bytecode)]
-            + ["--compile=" + str(source) for source in sources],
-            check=True,
-        )
-        for source in sources:
-            compiled = bytecode / source.with_suffix(".gdc").name
-            relative = source.relative_to(staging).as_posix()
-            files[relative[:-3] + ".gdc"] = compiled.read_bytes()
-            if relative.startswith("gmo/"):
-                files[relative + ".remap"] = (
-                    '[remap]\n\npath="res://' + relative[:-3] + '.gdc"\n'
-                ).encode("utf-8")
+    for source in sorted((ROOT / "gmo/src").rglob("*.gd")):
+        relative = source.relative_to(ROOT / "gmo/src").as_posix()
+        files[relative] = source.read_bytes()
+        # An empty remap section keeps this resource at its source path instead
+        # of following the export's old .gd -> .gdc remap. Let the actual Web
+        # engine parse its scripts; do not assume an external bytecode revision.
+        files[relative + ".remap"] = b"[remap]\n"
+    for source in sorted((ROOT / "gmo/src").rglob("*.tscn")):
+        files[source.relative_to(ROOT / "gmo/src").as_posix()] = source.read_bytes()
     for name in ("GMO_hybrid_reworked.png", "GMO_hybrid_reworked.png.import"):
         files[ICON_DIR + name] = (ROOT / "gmo/assets" / name).read_bytes()
     for asset in (ROOT / "gmo/assets").glob("*.stex"):
@@ -88,7 +68,7 @@ def main():
     base_chunks = sorted(ROOT.glob("Brotato.pck.part*")) + sorted(ROOT.glob("Brotato.wasm.part*"))
     manifest = {
         "format": "godot3-pck-overlay-v1",
-        "version": "gmo-web-1",
+        "version": "gmo-web-2",
         "engine": "3.7.0",
         "base_repository": "bitball41/potato-modded",
         "base_ref": BASE_REF,

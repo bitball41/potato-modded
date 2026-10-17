@@ -1,6 +1,6 @@
 {
   "format": "godot3-pck-overlay-v1",
-  "version": "gmo-web-1",
+  "version": "gmo-web-2",
   "engine": "3.7.0",
   "base_repository": "bitball41/potato-modded",
   "base_ref": "df84cdf6b5084d91d5693fd5cf0159f62116a224",
@@ -8,8 +8,8 @@
   "upstream_ref": "3c85e5c2ce6f3e3004f8ef082fdb117661b6b9d6",
   "patch": {
     "name": "GMO.pck",
-    "size": 347248,
-    "sha256": "4bbff1980d96fb24a9e0fd9580602efbbd0c9ee1aa17790813670196b25830c1"
+    "size": 346192,
+    "sha256": "1ff94e652d1f7733f4eb3c45045723b5693501ab8270d9d94aa26ff227b56287"
   },
   "base_files": [
     {
@@ -76,22 +76,32 @@
   "engine_script_integrity": "sha384-iYXQmBtfCFvzeL4ZwJlDSFtqh8zZMO8xHvr2sF0CwGEl9rlura5AQbzwpAkcxPJI",
   "resources": [
     ".import/GMO_hybrid_reworked.png-8f1c3cae10e72dc5affff309096a8c49.stex",
+    "gmo/fusion.gd",
     "gmo/fusion.gd.remap",
-    "gmo/fusion.gdc",
+    "gmo/selection_controller.gd",
+    "gmo/selection_controller.gd.remap",
+    "gmo/selection_controls.gd",
     "gmo/selection_controls.gd.remap",
-    "gmo/selection_controls.gdc",
+    "gmo/upstream_compatibility.gd",
     "gmo/upstream_compatibility.gd.remap",
-    "gmo/upstream_compatibility.gdc",
-    "items/characters/character_data.gdc",
-    "main.gdc",
+    "items/characters/character_data.gd",
+    "items/characters/character_data.gd.remap",
+    "main.gd",
+    "main.gd.remap",
     "mods-unpacked/flabort-GMO/content/characters/GMO_dummy/GMO_hybrid_reworked.png",
     "mods-unpacked/flabort-GMO/content/characters/GMO_dummy/GMO_hybrid_reworked.png.import",
-    "singletons/item_service.gdc",
-    "singletons/player_run_data.gdc",
-    "singletons/progress_data.gdc",
-    "singletons/run_data.gdc",
-    "ui/menus/run/character_selection.gdc",
-    "ui/menus/shop/shop_item.gdc",
-    "weapons/weapon.gdc"
+    "singletons/item_service.gd",
+    "singletons/item_service.gd.remap",
+    "singletons/player_run_data.gd",
+    "singletons/player_run_data.gd.remap",
+    "singletons/progress_data.gd",
+    "singletons/progress_data.gd.remap",
+    "singletons/run_data.gd",
+    "singletons/run_data.gd.remap",
+    "ui/menus/run/character_selection.tscn",
+    "ui/menus/shop/shop_item.gd",
+    "ui/menus/shop/shop_item.gd.remap",
+    "weapons/weapon.gd",
+    "weapons/weapon.gd.remap"
   ]
 }

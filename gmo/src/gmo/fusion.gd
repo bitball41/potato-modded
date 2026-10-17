@@ -24,7 +24,7 @@ static func balance_values(preset: String, custom: Array = []) -> Array:
 
 static func resolve(character_id: String) -> CharacterData:
 	if not character_id.begins_with(PREFIX):
-		return ItemService.get_element_safe(ItemService.characters, character_id)
+		return ItemService.get_element_safe(ItemService.characters, character_id) as CharacterData
 	var parts = character_id.split("__")
 	if parts.size() != 8:
 		return null

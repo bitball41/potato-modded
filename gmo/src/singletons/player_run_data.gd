@@ -130,7 +130,7 @@ func serialize() -> Dictionary:
 
 func deserialize(data: Dictionary) -> PlayerRunData:
 	current_character = (
-		load("res://gmo/fusion.gd").resolve(data.current_character)
+		_gmo_resolve_character(data.current_character)
 		if data.current_character
 		else null
 	)
@@ -175,7 +175,7 @@ func deserialize(data: Dictionary) -> PlayerRunData:
 			continue
 
 		var item_data = ItemService.get_element_safe(ItemService.items, item.my_id)
-		var character_data = load("res://gmo/fusion.gd").resolve(item.my_id)
+		var character_data = _gmo_resolve_character(item.my_id)
 		if item_data != null:
 			item_data = item_data.duplicate()
 			item_data.deserialize_and_merge(item)
@@ -657,3 +657,13 @@ static func init_effects() -> Dictionary:
 
 func is_full_health() -> bool:
 	return current_health == effects.stat_max_hp
+
+
+func _gmo_resolve_character(character_id) -> CharacterData:
+	# Standard saves must not depend on the fusion UI/service being loadable.
+	if character_id is String and character_id.begins_with("gmo_v1__"):
+		var service = load("res://gmo/fusion.gd")
+		if service != null and service.can_instance():
+			return service.resolve(character_id)
+		return null
+	return ItemService.get_element_safe(ItemService.characters, character_id) as CharacterData

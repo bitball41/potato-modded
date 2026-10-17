@@ -904,7 +904,8 @@ func apply_common_gold_pickup_effects(value: int, player_index: int) -> int:
 
 func add_character(character: CharacterData, player_index: int) -> void :
 	players_data[player_index].current_character = character
-	load("res://gmo/fusion.gd").ensure_progress(character)
+	if not character.gmo_character_ids.empty():
+		load("res://gmo/fusion.gd").ensure_progress(character)
 	add_item(character, player_index)
 
 func remove_character(character: CharacterData, player_index: int) -> void :
@@ -1278,7 +1279,12 @@ func apply_effects_array(effects: Array, player_index: int) -> void :
 
 func unapply_item_effects(item_data: ItemParentData, player_index: int) -> void :
 	Utils.reset_stat_cache(player_index)
-	for effect in item_data.effects:
+	var effects_to_remove = item_data.effects
+	if item_data is CharacterData and not item_data.gmo_character_ids.empty():
+		# Undo mixed SUM/REPLACE modifiers in the reverse order they were applied.
+		effects_to_remove = item_data.effects.duplicate()
+		effects_to_remove.invert()
+	for effect in effects_to_remove:
 		effect.unapply(player_index)
 	ChallengeService.check_stat_challenges(player_index)
 
@@ -1789,7 +1795,8 @@ func resume_from_state(state: Dictionary) -> void :
 		players_data_copy.push_back(player_data.duplicate())
 	players_data = players_data_copy
 	for player_data in players_data:
-		load("res://gmo/fusion.gd").ensure_progress(player_data.current_character)
+		if player_data.current_character != null and not player_data.current_character.gmo_character_ids.empty():
+			load("res://gmo/fusion.gd").ensure_progress(player_data.current_character)
 
 	current_run_accessibility_settings = state.enemy_scaling.duplicate()
 	if state.has("constant_projectile"):

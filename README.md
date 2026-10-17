@@ -12,7 +12,8 @@ On character selection, enable **GMO**, select a balance preset, then select two
 different unlocked characters. Hovering the second character previews the fusion;
 incompatible characters show an explanation. **Reset fusion** clears the choices.
 Keyboard/controller navigation, random selection, and local co-op use the game's
-existing selection system. Each co-op player can choose their own fusion.
+existing selection system. Each co-op player can choose their own fusion. Back or
+Cancel clears the current fusion step before leaving character selection.
 
 | Balance | XP gain | Item prices | Enemy count | Enemy speed |
 | --- | ---: | ---: | ---: | ---: |
@@ -37,9 +38,14 @@ entries; they do not replace either character's individual win records or count 
 extra vanilla characters toward Nightmare unlocks. To retain access to existing
 saves, use the same browser profile and origin; browsers isolate different origins.
 
-The original PCK/WASM chunks and engine files are unchanged. The launcher merges a
-small `GMO.pck` resource patch into the pack index before startup. The runtime runs
-native GDScript; the launcher does no per-frame gameplay work. Downloads are
+The original PCK/WASM chunks and engine files are unchanged. The original character
+selection script also stays intact: a separate child controller attaches GMO after
+the native screen initializes. Hover previews do not apply/remove fusion effects
+or replace the grid's character resources. The custom dialog uses Godot 3 APIs.
+
+The launcher merges a small `GMO.pck` resource patch into the pack index before
+startup. The actual Web engine parses the changed GDScript source, avoiding an
+assumed external bytecode revision. The launcher does no per-frame gameplay work. Downloads are
 bounded to three concurrent files and cached separately from game saves. Asset
 sizes and, where Web Crypto is available, SHA-256 hashes are checked before use.
 
@@ -49,14 +55,14 @@ sizes and, where Web Crypto is available, SHA-256 hashes are checked before use.
   services and controls.
 - `gmo/upstream-incompatibilities.json`: normalized upstream pair rules.
 - `gmo/build.json`: base revision, upstream revision, resource list and asset hashes.
-- `GMO.pck`: compiled Godot 3.7 patch, ready for the launcher.
+- `GMO.pck`: native script/scene resource patch, ready for the launcher.
 - `tools/launcher.html.in`: launcher source template.
 - [Credits and upstream details](gmo/NOTICE.md).
 
-Build the patch with [GDRE Tools v2.7.4](https://github.com/GDRETools/gdsdecomp/releases/tag/v2.7.4):
+Package the patch with Python (no editor or external script compiler required):
 
 ```bash
-python tools/build_gmo.py --gdre /absolute/path/to/gdre_tools.x86_64
+python tools/build_gmo.py
 ```
 
 Commit the source and `GMO.pck`, then pin the launcher to that commit:
@@ -70,4 +76,4 @@ The base assets remain pinned to the pre-mod export; changing the engine or base
 game requires adapting the native scripts and updating the base ref together.
 
 No automated or manual tests were run for this change, as requested. Packaging
-compiles bytecode without starting the game or opening an editor.
+writes the resource archive without starting the game or opening an editor.
